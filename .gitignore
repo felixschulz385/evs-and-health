@@ -84,3 +84,6 @@ venv.bak/
 
 # Data
 data/
+
+# Outputs
+outputs/
