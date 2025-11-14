@@ -269,6 +269,7 @@ merged_respiratory <- merged %>%
 ## Chain-IV Tests
 
 ```{r}
+#| output: asis
 # Zero-th stage regression: Test instrument relevance
 # LF_PV (charging infrastructure) should predict green energy availability (gr_by_year)
 # This checks the first link in the chain-IV approach
@@ -277,7 +278,7 @@ zeroth_stage <- felm(
     data = merged_all
 )
 
-screenreg(
+htmlreg(
     list(
         "0th-stage" = zeroth_stage
         ),
@@ -334,11 +335,12 @@ tsls_respiratory <- felm(
 ```
 
 ```{r}
+#| output: asis
 # Display regression results in formatted table
 # Compare TWFE and 2SLS estimates for all causes and respiratory diseases
 # First stage results show instrument strength (relevance)
 # Second stage results show causal effect estimates
-screenreg(
+htmlreg(
     list(
         "TWFE" = twfe_all,
         "1st Stage" = tsls_all$stage1, 
@@ -353,5 +355,87 @@ screenreg(
     include.rsquared = FALSE,
     include.adjrs = FALSE,
     include.fstatistic = TRUE  # Important for assessing instrument strength
+    )
+```
+
+## Pre-COVID Analysis
+
+```{r}
+# Filter data to pre-COVID period (before 2020)
+# COVID-19 pandemic significantly affected healthcare utilization and reporting
+# Analyzing pre-2020 data provides cleaner estimates unconfounded by pandemic effects
+
+merged_all_precovid <- merged_all %>%
+    filter(year < 2020)
+
+merged_respiratory_precovid <- merged_respiratory %>%
+    filter(year < 2020)
+```
+
+### All Causes (Pre-COVID)
+
+```{r}
+# TWFE model for all-cause hospitalizations (pre-COVID period)
+# Excludes years affected by pandemic-related changes in healthcare seeking behavior
+twfe_all_precovid <- felm(
+    patients_per_1000 ~ BEV_share | AGS + year | 0 | state + year,
+    data = merged_all_precovid
+)
+```
+
+
+```{r}
+# 2SLS model for all-cause hospitalizations (pre-COVID period)
+# Instrumental variable approach on pre-pandemic data
+tsls_all_precovid <- felm(
+    patients_per_1000 ~ 1 | AGS + year | (BEV_share ~ LF_PV) | state + year,
+    data = merged_all_precovid
+)
+```
+
+### Respiratory Diseases (Pre-COVID)
+
+```{r}
+# TWFE model for respiratory diseases (pre-COVID period)
+# Respiratory disease patterns were heavily disrupted by COVID-19
+# Pre-COVID analysis provides more reliable baseline estimates
+twfe_respiratory_precovid <- felm(
+    patients_per_1000 ~ BEV_share | AGS + year | 0 | state + year,
+    data = merged_respiratory_precovid
+)
+```
+
+
+```{r}
+# 2SLS model for respiratory diseases (pre-COVID period)
+# Causal estimates without pandemic confounding
+tsls_respiratory_precovid <- felm(
+    patients_per_1000 ~ 1 | AGS + year | (BEV_share ~ LF_PV) | state + year,
+    data = merged_respiratory_precovid
+)
+```
+
+### Pre-COVID Results Table
+
+```{r}
+#| output: asis
+# Compare pre-COVID and full sample results
+# Pre-COVID estimates should be more reliable for identifying EV effects
+# Differences between samples indicate pandemic impact on relationship
+htmlreg(
+    list(
+        "TWFE" = twfe_all_precovid,
+        "1st Stage" = tsls_all_precovid$stage1, 
+        "2nd Stage" = tsls_all_precovid,
+        "TWFE" = twfe_respiratory_precovid,
+        "1st Stage" = tsls_respiratory_precovid$stage1, 
+        "2nd Stage" = tsls_respiratory_precovid),
+    custom.header = list(
+        "All Causes (Pre-COVID)" = 1:3,
+        "Respiratory Diseases (Pre-COVID)" = 4:6
+    ),
+    include.rsquared = FALSE,
+    include.adjrs = FALSE,
+    include.fstatistic = TRUE
     )
 ```

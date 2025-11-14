@@ -449,7 +449,6 @@ Figure&nbsp;1
 <h1>Results</h1>
 <section id="chain-iv-tests" class="level2">
 <h2 class="anchored" data-anchor-id="chain-iv-tests">Chain-IV Tests</h2>
-<div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Zero-th stage regression: Test instrument relevance</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co"># LF_PV (charging infrastructure) should predict green energy availability (gr_by_year)</span></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co"># This checks the first link in the chain-IV approach</span></span>
@@ -458,7 +457,7 @@ Figure&nbsp;1
 <span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_all</span>
 <span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="fu">htmlreg</span>(</span>
 <span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(</span>
 <span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"0th-stage"</span> <span class="ot">=</span> zeroth_stage</span>
 <span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>        ),</span>
@@ -467,112 +466,936 @@ Figure&nbsp;1
 <span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.adjrs =</span> <span class="cn">FALSE</span>,</span>
 <span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.fstatistic =</span> <span class="cn">TRUE</span>  <span class="co"># F-statistic tests instrument strength</span></span>
 <span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-=====================================
-                          0th-stage  
--------------------------------------
-gr_by_year                   0.00004 
-                            (0.00327)
--------------------------------------
-Num. obs.                 3205       
-F statistic (full model)   855.23127 
-F (full model): p-value      0.00000 
-F statistic (proj model)     0.00015 
-F (proj model): p-value      0.99017 
-Num. groups: AGS           401       
-Num. groups: year            8       
-=====================================
-*** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
-</div>
-</div>
+<table class="texreg" style="margin: 10px auto;border-collapse: collapse;border-spacing: 0px;caption-side: bottom;color: #000000;border-top: 2px solid #000000;">
+<caption>
+Statistical models
+</caption>
+<thead>
+<tr>
+<th style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+0th-stage
+</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-top: 1px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+gr_by_year
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00004
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(0.00327)
+</td>
+</tr>
+<tr style="border-top: 1px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. obs.
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+3205
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F statistic (full model)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+855.23127
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F (full model): p-value
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00000
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F statistic (proj model)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00015
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F (proj model): p-value
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.99017
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. groups: AGS
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+401
+</td>
+</tr>
+<tr style="border-bottom: 2px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. groups: year
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+8
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="font-size: 0.8em;" colspan="2">
+<sup>***</sup>p &lt; 0.001; <sup>**</sup>p &lt; 0.01; <sup>*</sup>p &lt; 0.05
+</td>
+</tr>
+</tfoot>
+</table>
 </section>
 <section id="all-causes" class="level2">
 <h2 class="anchored" data-anchor-id="all-causes">All Causes</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Two-way fixed effects (TWFE) model for all-cause hospitalizations</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Controls for time-invariant district characteristics (AGS FE) and common time trends (year FE)</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Standard errors clustered by state and year</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>twfe_all <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> BEV_share <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> <span class="dv">0</span> <span class="sc">|</span> state <span class="sc">+</span> year,</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_all</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Two-way fixed effects (TWFE) model for all-cause hospitalizations</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Controls for time-invariant district characteristics (AGS FE) and common time trends (year FE)</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Standard errors clustered by state and year</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>twfe_all <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> BEV_share <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> <span class="dv">0</span> <span class="sc">|</span> state <span class="sc">+</span> year,</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_all</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Two-stage least squares (2SLS) instrumental variable regression</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Instruments BEV_share with LF_PV (charging infrastructure)</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Addresses potential endogeneity: BEV adoption may be correlated with unobserved factors</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="co"># that also affect health (e.g., environmental preferences, income)</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>tsls_all <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> (BEV_share <span class="sc">~</span> LF_PV) <span class="sc">|</span> state <span class="sc">+</span> year,</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_all</span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Two-stage least squares (2SLS) instrumental variable regression</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Instruments BEV_share with LF_PV (charging infrastructure)</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Addresses potential endogeneity: BEV adoption may be correlated with unobserved factors</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co"># that also affect health (e.g., environmental preferences, income)</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>tsls_all <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> (BEV_share <span class="sc">~</span> LF_PV) <span class="sc">|</span> state <span class="sc">+</span> year,</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_all</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="respiratory-diseases" class="level2">
 <h2 class="anchored" data-anchor-id="respiratory-diseases">Respiratory Diseases</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TWFE model for respiratory disease hospitalizations</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected to show stronger effects if EVs improve air quality</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>twfe_respiratory <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> BEV_share <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> <span class="dv">0</span> <span class="sc">|</span> state <span class="sc">+</span> year,</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TWFE model for respiratory disease hospitalizations</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected to show stronger effects if EVs improve air quality</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>twfe_respiratory <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> BEV_share <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> <span class="dv">0</span> <span class="sc">|</span> state <span class="sc">+</span> year,</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_respiratory</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2SLS model for respiratory disease hospitalizations</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Instrumental variable approach to identify causal effect</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>tsls_respiratory <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> (BEV_share <span class="sc">~</span> LF_PV) <span class="sc">|</span> state <span class="sc">+</span> year,</span>
 <span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_respiratory</span>
 <span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Display regression results in formatted table</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare TWFE and 2SLS estimates for all causes and respiratory diseases</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="co"># First stage results show instrument strength (relevance)</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Second stage results show causal effect estimates</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="fu">htmlreg</span>(</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"TWFE"</span> <span class="ot">=</span> twfe_all,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"1st Stage"</span> <span class="ot">=</span> tsls_all<span class="sc">$</span>stage1, </span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"2nd Stage"</span> <span class="ot">=</span> tsls_all,</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"TWFE"</span> <span class="ot">=</span> twfe_respiratory,</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"1st Stage"</span> <span class="ot">=</span> tsls_respiratory<span class="sc">$</span>stage1, </span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"2nd Stage"</span> <span class="ot">=</span> tsls_respiratory),</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">custom.header =</span> <span class="fu">list</span>(</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"All Causes"</span> <span class="ot">=</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>,</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Respiratory Diseases"</span> <span class="ot">=</span> <span class="dv">4</span><span class="sc">:</span><span class="dv">6</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.rsquared =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.adjrs =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.fstatistic =</span> <span class="cn">TRUE</span>  <span class="co"># Important for assessing instrument strength</span></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="texreg" style="margin: 10px auto;border-collapse: collapse;border-spacing: 0px;caption-side: bottom;color: #000000;border-top: 2px solid #000000;">
+<caption>
+Statistical models
+</caption>
+<thead>
+<tr>
+<th>
+&nbsp;
+</th>
+<th style="padding-left: 5px;padding-right: 5px;border-bottom: 1px solid #000000;" colspan="3">
+All Causes
+</th>
+<th style="padding-left: 5px;padding-right: 5px;border-bottom: 1px solid #000000;" colspan="3">
+Respiratory Diseases
+</th>
+</tr>
+<tr>
+<th style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+TWFE
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+1st Stage
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+2nd Stage
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+TWFE
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+1st Stage
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+2nd Stage
+</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-top: 1px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+BEV_share
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+4.26
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+-0.05
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(1.71)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(0.16)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+LF_PV
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.12<sup>*</sup>
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.12<sup>*</sup>
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(0.04)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(0.04)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+<code>BEV_share(fit)</code>
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+4.75
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1.09
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(5.29)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(1.08)
+</td>
+</tr>
+<tr style="border-top: 1px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. obs.
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+2398
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+2398
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+2398
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+2362
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+2362
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+2362
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F statistic (full model)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+241.64
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+34.09
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+241.24
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+73.63
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+33.90
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+63.06
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F (full model): p-value
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F statistic (proj model)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+6.24
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+10.16
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.81
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.11
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+9.19
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1.02
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F (proj model): p-value
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.01
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.37
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.74
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.31
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. groups: AGS
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+400
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+400
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+400
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+394
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+394
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+394
+</td>
+</tr>
+<tr style="border-bottom: 2px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. groups: year
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+6
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+6
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+6
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+6
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+6
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+6
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="font-size: 0.8em;" colspan="7">
+<sup>***</sup>p &lt; 0.001; <sup>**</sup>p &lt; 0.01; <sup>*</sup>p &lt; 0.05
+</td>
+</tr>
+</tfoot>
+</table>
+</section>
+<section id="pre-covid-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="pre-covid-analysis">Pre-COVID Analysis</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2SLS model for respiratory disease hospitalizations</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Instrumental variable approach to identify causal effect</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>tsls_respiratory <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> (BEV_share <span class="sc">~</span> LF_PV) <span class="sc">|</span> state <span class="sc">+</span> year,</span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_respiratory</span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter data to pre-COVID period (before 2020)</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># COVID-19 pandemic significantly affected healthcare utilization and reporting</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Analyzing pre-2020 data provides cleaner estimates unconfounded by pandemic effects</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>merged_all_precovid <span class="ot">&lt;-</span> merged_all <span class="sc">%&gt;%</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(year <span class="sc">&lt;</span> <span class="dv">2020</span>)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>merged_respiratory_precovid <span class="ot">&lt;-</span> merged_respiratory <span class="sc">%&gt;%</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(year <span class="sc">&lt;</span> <span class="dv">2020</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="all-causes-pre-covid" class="level3">
+<h3 class="anchored" data-anchor-id="all-causes-pre-covid">All Causes (Pre-COVID)</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TWFE model for all-cause hospitalizations (pre-COVID period)</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Excludes years affected by pandemic-related changes in healthcare seeking behavior</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>twfe_all_precovid <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> BEV_share <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> <span class="dv">0</span> <span class="sc">|</span> state <span class="sc">+</span> year,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_all_precovid</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Display regression results in formatted table</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare TWFE and 2SLS estimates for all causes and respiratory diseases</span></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co"># First stage results show instrument strength (relevance)</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Second stage results show causal effect estimates</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(</span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"TWFE"</span> <span class="ot">=</span> twfe_all,</span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"1st Stage"</span> <span class="ot">=</span> tsls_all<span class="sc">$</span>stage1, </span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"2nd Stage"</span> <span class="ot">=</span> tsls_all,</span>
-<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"TWFE"</span> <span class="ot">=</span> twfe_respiratory,</span>
-<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"1st Stage"</span> <span class="ot">=</span> tsls_respiratory<span class="sc">$</span>stage1, </span>
-<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"2nd Stage"</span> <span class="ot">=</span> tsls_respiratory),</span>
-<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">custom.header =</span> <span class="fu">list</span>(</span>
-<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"All Causes"</span> <span class="ot">=</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>,</span>
-<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Respiratory Diseases"</span> <span class="ot">=</span> <span class="dv">4</span><span class="sc">:</span><span class="dv">6</span></span>
-<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.rsquared =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.adjrs =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.fstatistic =</span> <span class="cn">TRUE</span>  <span class="co"># Important for assessing instrument strength</span></span>
-<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-========================================================================================
-                                    All Causes                 Respiratory Diseases     
-                          ------------------------------  ------------------------------
-                          TWFE      1st Stage  2nd Stage  TWFE      1st Stage  2nd Stage
-----------------------------------------------------------------------------------------
-BEV_share                    4.26                           -0.05                       
-                            (1.71)                          (0.16)                      
-LF_PV                                  0.12 *                          0.12 *           
-                                      (0.04)                          (0.04)            
-`BEV_share(fit)`                                  4.75                            1.09  
-                                                 (5.29)                          (1.08) 
-----------------------------------------------------------------------------------------
-Num. obs.                 2398      2398       2398       2362      2362       2362     
-F statistic (full model)   241.64     34.09     241.24      73.63     33.90      63.06  
-F (full model): p-value      0.00      0.00       0.00       0.00      0.00       0.00  
-F statistic (proj model)     6.24     10.16       0.81       0.11      9.19       1.02  
-F (proj model): p-value      0.01      0.00       0.37       0.74      0.00       0.31  
-Num. groups: AGS           400       400        400        394       394        394     
-Num. groups: year            6         6          6          6         6          6     
-========================================================================================
-*** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2SLS model for all-cause hospitalizations (pre-COVID period)</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Instrumental variable approach on pre-pandemic data</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>tsls_all_precovid <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> (BEV_share <span class="sc">~</span> LF_PV) <span class="sc">|</span> state <span class="sc">+</span> year,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_all_precovid</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+</section>
+<section id="respiratory-diseases-pre-covid" class="level3">
+<h3 class="anchored" data-anchor-id="respiratory-diseases-pre-covid">Respiratory Diseases (Pre-COVID)</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TWFE model for respiratory diseases (pre-COVID period)</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Respiratory disease patterns were heavily disrupted by COVID-19</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-COVID analysis provides more reliable baseline estimates</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>twfe_respiratory_precovid <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> BEV_share <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> <span class="dv">0</span> <span class="sc">|</span> state <span class="sc">+</span> year,</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_respiratory_precovid</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2SLS model for respiratory diseases (pre-COVID period)</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Causal estimates without pandemic confounding</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>tsls_respiratory_precovid <span class="ot">&lt;-</span> <span class="fu">felm</span>(</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    patients_per_1000 <span class="sc">~</span> <span class="dv">1</span> <span class="sc">|</span> AGS <span class="sc">+</span> year <span class="sc">|</span> (BEV_share <span class="sc">~</span> LF_PV) <span class="sc">|</span> state <span class="sc">+</span> year,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> merged_respiratory_precovid</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="pre-covid-results-table" class="level3">
+<h3 class="anchored" data-anchor-id="pre-covid-results-table">Pre-COVID Results Table</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare pre-COVID and full sample results</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-COVID estimates should be more reliable for identifying EV effects</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Differences between samples indicate pandemic impact on relationship</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="fu">htmlreg</span>(</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"TWFE"</span> <span class="ot">=</span> twfe_all_precovid,</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"1st Stage"</span> <span class="ot">=</span> tsls_all_precovid<span class="sc">$</span>stage1, </span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"2nd Stage"</span> <span class="ot">=</span> tsls_all_precovid,</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"TWFE"</span> <span class="ot">=</span> twfe_respiratory_precovid,</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"1st Stage"</span> <span class="ot">=</span> tsls_respiratory_precovid<span class="sc">$</span>stage1, </span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"2nd Stage"</span> <span class="ot">=</span> tsls_respiratory_precovid),</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">custom.header =</span> <span class="fu">list</span>(</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"All Causes (Pre-COVID)"</span> <span class="ot">=</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>,</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Respiratory Diseases (Pre-COVID)"</span> <span class="ot">=</span> <span class="dv">4</span><span class="sc">:</span><span class="dv">6</span></span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.rsquared =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.adjrs =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">include.fstatistic =</span> <span class="cn">TRUE</span></span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>    )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="texreg" style="margin: 10px auto;border-collapse: collapse;border-spacing: 0px;caption-side: bottom;color: #000000;border-top: 2px solid #000000;">
+<caption>
+Statistical models
+</caption>
+<thead>
+<tr>
+<th>
+&nbsp;
+</th>
+<th style="padding-left: 5px;padding-right: 5px;border-bottom: 1px solid #000000;" colspan="3">
+All Causes (Pre-COVID)
+</th>
+<th style="padding-left: 5px;padding-right: 5px;border-bottom: 1px solid #000000;" colspan="3">
+Respiratory Diseases (Pre-COVID)
+</th>
+</tr>
+<tr>
+<th style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+TWFE
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+1st Stage
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+2nd Stage
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+TWFE
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+1st Stage
+</th>
+<th style="padding-left: 5px;padding-right: 5px;">
+2nd Stage
+</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-top: 1px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+BEV_share
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.89
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+-0.09
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(0.79)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(0.11)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+LF_PV
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.04
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.04
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(0.02)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(0.02)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+<code>BEV_share(fit)</code>
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+-16.58
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+-1.53
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(30.09)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+&nbsp;
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+(2.44)
+</td>
+</tr>
+<tr style="border-top: 1px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. obs.
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1200
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1200
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1200
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1182
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1182
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1182
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F statistic (full model)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+264.06
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+2.68
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+181.49
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+71.84
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+2.67
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+63.80
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F (full model): p-value
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.00
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F statistic (proj model)
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+1.29
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+5.01
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.30
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.57
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+4.13
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.39
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+F (proj model): p-value
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.26
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.03
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.58
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.45
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.04
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+0.53
+</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. groups: AGS
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+400
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+400
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+400
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+394
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+394
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+394
+</td>
+</tr>
+<tr style="border-bottom: 2px solid #000000;">
+<td style="padding-left: 5px;padding-right: 5px;">
+Num. groups: year
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+3
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+3
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+3
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+3
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+3
+</td>
+<td style="padding-left: 5px;padding-right: 5px;">
+3
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td style="font-size: 0.8em;" colspan="7">
+<sup>***</sup>p &lt; 0.001; <sup>**</sup>p &lt; 0.01; <sup>*</sup>p &lt; 0.05
+</td>
+</tr>
+</tfoot>
+</table>
+</section>
 </section>
 </section>
 
