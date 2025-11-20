@@ -1,0 +1,506 @@
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#| output: false
+
+# Load necessary libraries
+library(knitr)
+opts_knit$set(root.dir = "../../")  # Set working directory to project root
+library(tidyverse)  # Data manipulation and visualization
+library(gganimate)  # Create animated plots
+library(arrow)      # Read/write Parquet files
+library(sf)         # Spatial data handling
+library(haven)      # Read Stata files
+library(lfe)        # Linear fixed effects models
+library(texreg)     # Regression table formatting
+#
+#
+#
+#
+#
+#| output: false
+
+# Load BEV (Battery Electric Vehicle) data from Stata file
+# Select relevant columns: region code (AGS), year, growth rate, BEV share, charging infrastructure, population
+bev_data <- read_dta("data/Germany/raw/BEV_health.dta", col_select = c(AGS, year, gr_by_year, BEV_share, LF_PV, pop_total))
+
+# Clean and filter BEV data
+bev_data <- bev_data %>% 
+    filter(AGS >= 1000, AGS <= 99999) %>%  # Keep only valid district codes (Kreise)
+    mutate(
+        across(c(AGS, year, pop_total), as.integer),  # Convert to integer for consistency
+    )
+    
+# Optional: Save processed data to Parquet format for faster loading
+# bev_data %>% write_parquet("data/Germany/bev_data.parquet")
+
+## Health data
+
+# Load health data from German Federal Statistical Office (Destatis)
+# File contains hospital patient statistics by region, year, age group, and ICD-10 diagnosis
+health_data_raw <- read_csv2("data/Germany/raw/23131-01-01-4.csv", skip = 7, locale = locale(encoding = "ISO-8859-1"))
+
+# Clean and reshape health data
+health_data <- health_data_raw %>% 
+    rename(year = ...1, AGS = ...2, age = ...4) %>%  # Rename unnamed columns
+    select(-...3) %>%  # Remove unnecessary column
+    filter(!str_detect(AGS, "[A-Za-z]")) %>%  # Remove non-numeric region codes (totals, etc.)
+    pivot_longer(-c(year, AGS, age), names_to = "icd10", values_to = "patients") %>%  # Reshape from wide to long format
+    mutate(
+        across(c(year, AGS, patients), as.integer),  # Convert numeric variables
+        across(c(age, icd10), as.factor)  # Convert categorical variables
+    ) %>%
+    mutate(
+        # Harmonize region codes for Berlin and Hamburg (city-states)
+        AGS = case_when(
+            AGS == 11 ~ 11000,  # Berlin
+            AGS == 2 ~ 2000,    # Hamburg
+            TRUE ~ AGS
+        )
+    ) %>%
+    filter(AGS >= 1000, AGS <= 99999)  # Keep only valid district codes
+
+# Optional: Save processed data
+# health_data %>% write_parquet("data/Germany/health_data.parquet")
+
+## Map
+
+# Load shapefile with district (Kreis) boundaries
+# VG5000 = Verwaltungsgebiete (administrative regions) at 1:5,000,000 scale
+map_data <- st_read("data/Germany/raw/vg5000_12-31.gk3.shape.ebenen/vg5000_ebenen_1231/VG5000_KRS.shp") %>%
+    mutate(AGS = as.integer(AGS)) %>%  # Ensure AGS is integer for joining
+    select(AGS, GEN, BEZ, geometry)  # Keep only essential columns: code, name, type, geometry
+#
+#
+#
+#
+#
+## BEV data validation
+# Check how many unique districts are in BEV data
+bev_data %>% select(AGS) %>% n_distinct()
+# -> 434 unique districts in bev_data
+
+# Identify districts in BEV data that are not in map data
+test <- anti_join(
+    bev_data, 
+    map_data,
+    by = "AGS"
+    )
+test %>% select(AGS) %>% distinct()
+test %>% pull(BEV_share) %>% is.na() %>% mean()
+# -> 33 districts in bev_data not in map_data, all have NA in BEV_share
+# These are likely historical districts that no longer exist or have been merged
+
+## Health data validation
+# Check how many unique districts are in health data
+health_data %>% select(AGS) %>% n_distinct()
+# -> 471 unique districts in health_data
+
+# Identify districts in health data that are not in map data
+test <- anti_join(
+    health_data , 
+    map_data,
+    by = "AGS"
+    ) 
+test %>% select(AGS) %>% distinct()
+test %>% pull(patients) %>% is.na() %>% mean()
+# -> 72 districts in health_data not in map_data, all have NA values
+# These are likely historical districts from earlier years in the dataset
+#
+#
+#
+## Reverse validation: Check if any current districts are missing from datasets
+
+## BEV data
+# Check if any districts in map are missing from BEV data
+anti_join(
+    map_data,
+    bev_data,
+    by = "AGS"
+    )
+# -> 0 districts in map_data not in bev_data
+# Good: All current districts have BEV data
+
+## Health data
+# Check if any districts in map are missing from health data
+anti_join(
+    map_data,
+    health_data ,
+    by = "AGS"
+    )
+# -> 0 districts in map_data not in health_data
+# Good: All current districts have health data
+#
+#
+#
+#
+#| eval: false
+
+# Create animated map showing BEV share over time
+# This visualization helps identify spatial and temporal patterns in EV adoption
+animation_bev <- inner_join(
+    bev_data, 
+    map_data,
+    by = "AGS"
+    ) %>% 
+    drop_na() %>%  # Remove districts with missing data
+    arrange(year, AGS) %>%  # Ensure proper ordering for animation
+    ggplot() + 
+        geom_sf(aes(geometry = geometry, fill = BEV_share, group = AGS)) +
+        theme_void() +  # Remove axes and background for cleaner map
+        scale_fill_viridis_c(
+            option = "plasma", 
+            transform = scales::transform_asinh()) +  # Use asinh transformation to handle zeros and skewness
+    labs(
+        title = 'Year: {frame_time}',
+        fill = "BEV Share (%)"
+        ) +
+    transition_time(year)  # Animate over years
+
+# Render and save animation
+animate(animation_bev, width = 800, height = 600, res = 100)
+anim_save("outputs/figures/germany_bev_share.gif", width = 800, height = 600, res = 100)
+
+# Create animated map showing patient rates over time
+# This helps visualize health outcomes across regions and time
+animation_patients <- inner_join(
+    health_data %>% 
+        filter(icd10 == "insgesamt", age == "Insgesamt"),  # Total patients across all diagnoses and ages
+    map_data,
+    by = "AGS"
+    ) %>% 
+    left_join(
+        bev_data %>% select(AGS, year, pop_total),
+        by = c("AGS", "year")
+    ) %>%
+    mutate(
+        patients = (patients / pop_total) * 1000  # Calculate rate per 1,000 population
+    ) %>%
+    drop_na() %>%
+    ggplot() + 
+        geom_sf(aes(geometry = geometry, fill = patients, group = AGS)) +
+        theme_void() +
+        scale_fill_viridis_c(
+            option = "plasma", 
+            transform = scales::transform_asinh()) +
+    labs(
+        title = 'Year: {frame_time}',
+        fill = "Patients\nper 1,000"
+        ) +
+    transition_time(year)
+
+# Render and save animation
+animate(animation_patients, width = 800, height = 600, res = 100)
+anim_save("outputs/figures/germany_patients.gif", width = 800, height = 600, res = 100)
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#| fig-cap: "Total Respiratory Disease Patients in Germany by Year"
+
+# Quick check: Total respiratory disease patients by year
+# J00-J99 = ICD-10 codes for diseases of the respiratory system
+health_data %>%
+group_by(year) %>%
+    filter(str_detect(icd10, "^J00-J99"), age == "Insgesamt") %>%
+    summarise(
+        total_patients = sum(patients, na.rm = TRUE)
+    ) %>%
+    ggplot(aes(x = year, y = total_patients)) +
+    geom_line() +
+    geom_point() +
+    labs(
+        x = "Year",
+        y = "Total Patients"
+    ) +
+    theme_bw()
+#
+#
+#
+#
+#
+# Merge BEV and health data for analysis
+# Inner join ensures we only keep observations with both BEV and health data
+merged <- bev_data %>%
+    inner_join( 
+        health_data,
+        by = c("AGS", "year")
+    ) %>%
+    mutate(
+        patients_per_1000 = (patients / pop_total) * 1000,  # Standardize by population
+        state = AGS %/% 1000  # Extract state code (first 1-2 digits of AGS) for clustering
+    )
+
+# Create dataset for all-cause analysis
+# "insgesamt" = total across all diagnoses
+# "Insgesamt" = total across all age groups
+merged_all <- merged %>% 
+    filter(icd10 == "insgesamt", age == "Insgesamt") %>%
+    select(-icd10, -age)  # Remove now-redundant columns
+
+# Create dataset for respiratory disease analysis
+# Focus on ICD-10 chapter J (respiratory diseases) as these are most likely
+# to be affected by air quality improvements from EVs
+merged_respiratory <- merged %>%
+    filter(str_detect(icd10, "^J00-J99"), age == "Insgesamt") %>%
+    select(-icd10, -age)
+#
+#
+#
+#
+#
+#
+#
+#| output: asis
+# Zero-th stage regression: Test instrument relevance
+# LF_PV (charging infrastructure) should predict green energy availability (gr_by_year)
+# This checks the first link in the chain-IV approach
+# Include state FE to control for state-level differences in infrastructure policy
+zeroth_stage <- felm(
+    LF_PV ~ gr_by_year | AGS + state | 0 | state + year,
+    data = merged_all
+)
+
+htmlreg(
+    list(
+        "0th-stage" = zeroth_stage
+        ),
+    digits = 5,
+    include.rsquared = FALSE,
+    include.adjrs = FALSE,
+    include.fstatistic = TRUE  # F-statistic tests instrument strength
+    )
+#
+#
+#
+#
+#
+# Two-way fixed effects (TWFE) model for all-cause hospitalizations
+# Controls for: district characteristics (AGS FE), time trends (year FE), state characteristics (state FE)
+# State FE accounts for differences in healthcare systems, population density, and environmental policies
+twfe_all <- felm(
+    patients_per_1000 ~ BEV_share | AGS + state + year | 0 | state + year,
+    data = merged_all
+)
+
+screenreg(twfe_all)
+#
+#
+#
+#
+# Two-stage least squares (2SLS) instrumental variable regression
+# Instruments BEV_share with LF_PV (charging infrastructure)
+# Addresses potential endogeneity: BEV adoption may be correlated with unobserved factors
+# State FE controls for state-level environmental regulations and economic conditions
+tsls_all <- felm(
+    patients_per_1000 ~ 1 | AGS + state + year | (BEV_share ~ LF_PV) | state + year,
+    data = merged_all
+)
+#
+#
+#
+#
+#
+# TWFE model for respiratory disease hospitalizations
+# Expected to show stronger effects if EVs improve air quality
+# State FE controls for state-specific air quality standards and healthcare policies
+twfe_respiratory <- felm(
+    patients_per_1000 ~ BEV_share | AGS + state + year | 0 | state + year,
+    data = merged_respiratory
+)
+#
+#
+#
+#
+# 2SLS model for respiratory disease hospitalizations
+# Instrumental variable approach to identify causal effect
+# State FE ensures comparisons within states with similar institutional contexts
+tsls_respiratory <- felm(
+    patients_per_1000 ~ 1 | AGS + state + year | (BEV_share ~ LF_PV) | state + year,
+    data = merged_respiratory
+)
+#
+#
+#
+#| output: asis
+# Display regression results in formatted table
+# Compare TWFE and 2SLS estimates for all causes and respiratory diseases
+# First stage results show instrument strength (relevance)
+# Second stage results show causal effect estimates
+# All models include state FE for robust inference
+htmlreg(
+    list(
+        "TWFE" = twfe_all,
+        "1st Stage" = tsls_all$stage1, 
+        "2nd Stage" = tsls_all,
+        "TWFE" = twfe_respiratory,
+        "1st Stage" = tsls_respiratory$stage1, 
+        "2nd Stage" = tsls_respiratory),
+    custom.header = list(
+        "All Causes" = 1:3,
+        "Respiratory Diseases" = 4:6
+    ),
+    include.rsquared = FALSE,
+    include.adjrs = FALSE,
+    include.fstatistic = TRUE  # Important for assessing instrument strength
+    )
+#
+#
+#
+#
+#
+# Filter data to pre-COVID period (before 2020)
+# COVID-19 pandemic significantly affected healthcare utilization and reporting
+# Analyzing pre-2020 data provides cleaner estimates unconfounded by pandemic effects
+
+merged_all_precovid <- merged_all %>%
+    filter(year < 2020)
+
+merged_respiratory_precovid <- merged_respiratory %>%
+    filter(year < 2020)
+#
+#
+#
+#
+#
+# TWFE model for all-cause hospitalizations (pre-COVID period)
+# Excludes years affected by pandemic-related changes in healthcare seeking behavior
+# State FE controls for state-level healthcare capacity and demand
+twfe_all_precovid <- felm(
+    patients_per_1000 ~ BEV_share | AGS + state + year | 0 | state + year,
+    data = merged_all_precovid
+)
+
+
+#
+#
+#
+# 2SLS model for all-cause hospitalizations (pre-COVID period)
+# Instrumental variable approach on pre-pandemic data
+# State FE ensures within-state comparisons unconfounded by state policies
+tsls_all_precovid <- felm(
+    patients_per_1000 ~ 1 | AGS + state + year | (BEV_share ~ LF_PV) | state + year,
+    data = merged_all_precovid
+)
+#
+#
+#
+#
+#
+# TWFE model for respiratory diseases (pre-COVID period)
+# Respiratory disease patterns were heavily disrupted by COVID-19
+# Pre-COVID analysis provides more reliable baseline estimates
+# State FE controls for regional variation in respiratory health risks
+twfe_respiratory_precovid <- felm(
+    patients_per_1000 ~ BEV_share | AGS + state + year | 0 | state + year,
+    data = merged_respiratory_precovid
+)
+
+
+#
+#
+#
+# 2SLS model for respiratory diseases (pre-COVID period)
+# Causal estimates without pandemic confounding
+# State FE ensures state-level policy differences don't confound estimates
+tsls_respiratory_precovid <- felm(
+    patients_per_1000 ~ 1 | AGS + state + year | (BEV_share ~ LF_PV) | state + year,
+    data = merged_respiratory_precovid
+)
+#
+#
+#
+#
+#
+#| output: asis
+# Compare pre-COVID and full sample results
+# Pre-COVID estimates should be more reliable for identifying EV effects
+# Differences between samples indicate pandemic impact on relationship
+# All models with state FE for consistency and robustness
+htmlreg(
+    list(
+        "TWFE" = twfe_all_precovid,
+        "1st Stage" = tsls_all_precovid$stage1, 
+        "2nd Stage" = tsls_all_precovid,
+        "TWFE" = twfe_respiratory_precovid,
+        "1st Stage" = tsls_respiratory_precovid$stage1, 
+        "2nd Stage" = tsls_respiratory_precovid),
+    custom.header = list(
+        "All Causes (Pre-COVID)" = 1:3,
+        "Respiratory Diseases (Pre-COVID)" = 4:6
+    ),
+    include.rsquared = FALSE,
+    include.adjrs = FALSE,
+    include.fstatistic = TRUE
+    )
+#
+#
+#
