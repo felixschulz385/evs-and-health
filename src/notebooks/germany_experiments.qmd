@@ -2,7 +2,9 @@
 title: "EVs and Health: Experiments for Germany"
 author: "Felix Schulz"
 date: today
-format: html
+format:
+  html:
+    css: table-captions.scss
 toc: true
 toc-depth: 5
 toc-expand: 4
@@ -10,166 +12,137 @@ toc-expand: 4
 
 # TODO
 
-This section outlines the methodological improvements and robustness checks needed for the analysis.
-
 **1. Temporal Lag Structure**
 
-Implement proper temporal relationships between variables to capture causal effects:
-
-* [x] Apply correct lag structure:
-  * Health outcome → **t** (current period)
-  * BEV adoption → **t-1** (one-year lag to capture delayed health effects)
-  * Charging infrastructure (PV) → **t-2** (two-year lag: infrastructure affects BEV adoption with delay)
-  * Solar radiation (GR) → **t-3** (three-year lag: radiation affects infrastructure deployment)
-* [x] Verify consistency: Ensure **PV_t-2 = LPV_t-1** in the dataset
+* [x] Apply lag structure:
+  * Health outcome → **t**
+  * BEV adoption → **t-1**
+  * Charging infrastructure (PV) → **t-2**
+  * Solar radiation (GR) → **t-3**
+* [x] Verify: **PV_t-2 = LPV_t-1**
 
 **2. Instrumental Variable Strategy**
 
-Validate the multi-stage instrumental variable approach:
-
-* [x] Confirm that the 1st-stage uses **predicted PV** from the 0th-stage (not raw PV)
-* This ensures a clean identification chain: GR → PV → BEV → Health
+* [x] 1st-stage uses **predicted PV** from 0th-stage (not raw PV)
 
 **3. Nonlinear Relationships**
 
-Account for potential nonlinearities in the relationships:
-
-* [x] **0th-stage enhancement**: Add quadratic term **gr_by_year²** to capture diminishing returns in solar panel installation
-* [x] **1st-stage enhancement**: Add quadratic term **PV²** using predicted values to allow for nonlinear effects of infrastructure on adoption
+* [x] **0th-stage**: Add quadratic term **gr_by_year²**
+* [x] **1st-stage**: Add quadratic term **PV²** using predicted values
 
 **4. Fixed Effects Specification**
 
-Control for unobserved heterogeneity:
-
-* [x] Include **State × Year** fixed effects to absorb:
-  * State-specific policy changes (e.g., EV subsidies, emissions regulations)
-  * Regional economic shocks
-  * Healthcare system differences across states
+* [x] **State × Year** fixed effects
 
 **5. Heterogeneity Analysis**
 
-Examine effect heterogeneity across different contexts:
-
 * [x] Estimate models separately for:
-  * **District type**: Rural districts (Landkreise) vs. Urban districts (Kreisfreie Städte)
-  * **Geography**: Western states (Old Bundesländer) vs. Eastern states (New Bundesländer)
+  * **District type**: Rural vs. Urban
+  * **Geography**: Western vs. Eastern states
   
-This reveals whether EV health effects differ by urbanization and regional characteristics.
-
 **6. Control Variables**
 
-Include additional covariates to reduce omitted variable bias:
-
-* [x] Verify availability of **GDP per capita (t-1)** in dataset
-* [x] Include GDP in 1st and 2nd stages to control for economic development
-* [ ] Consider additional controls (if data available):
-  * Physician density (healthcare access)
-  * Population age structure (health needs)
-  
-*Note: Some factors may be absorbed by district fixed effects.*
+* [x] **GDP per capita (t-1)**
+* [x] Include GDP in 1st and 2nd stages
+* [ ] Additional controls:
+  * Physician density
+  * Population age structure
 
 # Introduction
 
-This notebook analyzes the causal effect of battery electric vehicle (BEV) adoption on health outcomes in Germany using administrative data from 2016-2023. We employ an instrumental variables strategy that exploits exogenous variation in solar radiation to identify the health impacts of EV adoption.
-
-**Research Question**: Do regions with higher BEV adoption rates experience improved health outcomes, as measured by hospitalization rates?
-
-**Identification Strategy**: We use a multi-stage instrumental variables approach where solar radiation affects charging infrastructure deployment, which in turn affects BEV adoption. This provides plausibly exogenous variation in EV adoption that is uncorrelated with unobserved determinants of health.
+Multi-stage instrumental variables approach using solar radiation as instrument for charging infrastructure, which instruments BEV adoption, predicting health outcomes measured by hospitalization rates.
 
 # Data Loading
 
 ```{r}
 #| output: false
 
-# Load necessary libraries
 library(knitr)
-opts_knit$set(root.dir = "../../")  # Set working directory to project root
-library(tidyverse)  # Data manipulation and visualization
-library(gganimate)  # Create animated plots
-library(arrow)      # Read/write Parquet files
-library(sf)         # Spatial data handling
-library(haven)      # Read Stata files
-library(lfe)        # Linear fixed effects models with instrumental variables
-library(texreg)     # Professional regression table formatting
+opts_knit$set(root.dir = "../../")
+library(tidyverse)
+library(gganimate)
+library(arrow)
+library(sf)
+library(haven)
+library(lfe)
+library(texreg)
 ```
 
 # Data Preparation
-
-This section loads and prepares three key datasets: BEV adoption, health outcomes, and geographic boundaries.
 
 ```{r}
 #| output: false
 
 ## BEV Data
 
-# Load battery electric vehicle (BEV) adoption data
-# Source: German Federal Motor Transport Authority (Kraftfahrt-Bundesamt)
-# Coverage: All German districts (Kreise), 2016-2023
 bev_data <- read_dta("data/Germany/raw/BEV_health.dta", col_select = c(AGS, year, gr_by_year, BEV_share, LF_PV, pop_total, average_age, GDP_per_capita))
 
-# Clean and prepare BEV data
 bev_data <- bev_data %>% 
-    filter(AGS >= 1000, AGS <= 99999) %>%  # Keep only valid district codes (excludes aggregated regions)
+    filter(AGS >= 1000, AGS <= 99999) %>%
     mutate(
         across(c(AGS, year, pop_total, GDP_per_capita), as.integer),
     ) %>%
     rename(
-        PV_l1 = LF_PV,  # LF_PV = Ladeinfrastruktur (charging points), already lagged by 1 year
-        gr = gr_by_year  # gr = Global radiation (instrument for solar panel installation)
+        PV_l1 = LF_PV,
+        gr = gr_by_year
     )
-    
-# Optional: Save processed data for faster loading in future sessions
-# bev_data %>% write_parquet("data/Germany/bev_data.parquet")
 
 ## Health Data
 
-# Load hospitalization data from German Federal Statistical Office (Destatis)
-# Source: Hospital statistics (Krankenhausstatistik), Table 23131-01-01-4
-# Coverage: All hospital admissions by district, year, age group, and ICD-10 diagnosis
-health_data_raw <- read_csv2("data/Germany/raw/23131-01-01-4.csv", skip = 7, locale = locale(encoding = "ISO-8859-1"))
+patient_data_raw <- read_csv2("data/Germany/raw/23131-01-01-4.csv", skip = 7, locale = locale(encoding = "ISO-8859-1"))
 
-# Clean and reshape health data
-# Focus on two outcomes: all-cause hospitalizations and respiratory disease hospitalizations
-health_data <- health_data_raw %>% 
-    rename(year = ...1, AGS = ...2, age = ...4) %>%  # Rename automatically generated column names
-    select(-...3) %>%  # Remove redundant district name column
-    filter(!str_detect(AGS, "[A-Za-z]")) %>%  # Remove rows with text codes (aggregate statistics)
-    
-    # Extract key variables
-    filter(age == "Insgesamt") %>%  # Focus on all ages combined
+patient_data <- patient_data_raw %>% 
+    rename(year = ...1, AGS = ...2, age = ...4) %>%
+    select(-...3) %>%
+    filter(!str_detect(AGS, "[A-Za-z]")) %>%
+    filter(age == "Insgesamt") %>%
     select(
         year, AGS, 
-        patients_all = insgesamt,  # Total hospitalizations (all diagnoses)
-        patients_resp = `J00-J99 Krankheiten des  Atmungssystems`  # Respiratory diseases (ICD-10: J00-J99)
+        patients_all = insgesamt,
+        patients_resp = `J00-J99 Krankheiten des  Atmungssystems`
     ) %>%
     mutate(
         across(c(year, AGS, starts_with("patients")), as.integer),
     ) %>%
     mutate(
-        # Harmonize district codes for city-states (have different coding conventions)
         AGS = case_when(
-            AGS == 11 ~ 11000,  # Berlin
-            AGS == 2 ~ 2000,    # Hamburg
+            AGS == 11 ~ 11000,
+            AGS == 2 ~ 2000,
             TRUE ~ AGS
         )
     ) %>%
-    filter(AGS >= 1000, AGS <= 99999)  # Keep only valid district codes
+    filter(AGS >= 1000, AGS <= 99999)
 
-# Optional: Save processed health data
-# health_data %>% write_parquet("data/Germany/health_data.parquet")
+mortality_data_raw <- read_csv2("data/Germany/raw/12613-93-01-4.csv", skip = 6, locale = locale(encoding = "ISO-8859-1"))
+
+mortality_data <- mortality_data_raw %>% 
+    rename(year = ...1, AGS = ...2) %>%
+    select(-...3) %>%
+    filter(!str_detect(AGS, "[A-Za-z]")) %>%
+    select(
+        year, AGS, 
+        deaths_all = Insgesamt,
+        deaths_infants = `unter 1 Jahr`
+    ) %>%
+    mutate(
+        across(everything(), as.integer),
+    ) %>%
+    mutate(
+        AGS = case_when(
+            AGS == 11 ~ 11000,
+            AGS == 2 ~ 2000,
+            TRUE ~ AGS
+        )
+    ) %>%
+    filter(AGS >= 1000, AGS <= 99999)
 
 ## Geographic Data
 
-# Load district boundary shapefile
-# Source: Federal Agency for Cartography and Geodesy (BKG)
-# VG5000 = Administrative areas (Verwaltungsgebiete) at 1:5,000,000 scale
 map_data <- st_read("data/Germany/raw/vg5000_12-31.gk3.shape.ebenen/vg5000_ebenen_1231/VG5000_KRS.shp") %>%
     mutate(AGS = as.integer(AGS)) %>%
-    select(AGS, GEN, BEZ, geometry) %>%  # Keep: district code, name, type, geometry
+    select(AGS, GEN, BEZ, geometry) %>%
     mutate(
-        # Extract state from district code (first 1-2 digits)
         state = AGS %/% 1000,
-        # Map state codes to names
         state = case_when(
             state == 1 ~ "Schleswig-Holstein",
             state == 2 ~ "Hamburg",
@@ -190,68 +163,54 @@ map_data <- st_read("data/Germany/raw/vg5000_12-31.gk3.shape.ebenen/vg5000_ebene
             TRUE ~ NA_character_
         ),
         across(c(BEZ, GEN, state), as_factor),
-        # Create indicator variables for heterogeneity analysis
-        CITY = (BEZ %in% c("Kreisfreie Stadt", "Stadtkreis")),  # Urban district indicator
-        NEU = AGS >= 12000  # East Germany indicator (new federal states, post-reunification)
+        CITY = (BEZ %in% c("Kreisfreie Stadt", "Stadtkreis")),
+        NEU = AGS >= 12000
     )
 ```
 
 ## Data Validation
 
-Verify data quality and consistency across datasets.
-
 ```{r}
 ## BEV Data Validation
 
-# Check coverage: Number of unique districts in BEV data
 bev_data %>% select(AGS) %>% n_distinct()
-# Expected: ~400 districts (Germany has 401 districts as of 2023)
 
-# Identify mismatches: Districts in BEV data but not in map
 test <- anti_join(bev_data, map_data, by = "AGS")
 test %>% select(AGS) %>% distinct()
 test %>% pull(BEV_share) %>% is.na() %>% mean()
-# Result: 33 districts with missing BEV_share (100% NA)
-# Interpretation: These are historical districts that were merged/reorganized
 
-## Health Data Validation
+## Patient Data Validation
 
-# Check coverage: Number of unique districts in health data
-health_data %>% select(AGS) %>% n_distinct()
-# Expected: More than current count due to historical districts
+patient_data %>% select(AGS) %>% n_distinct()
 
-# Identify mismatches: Districts in health data but not in map
-test <- anti_join(health_data, map_data, by = "AGS") 
+test <- anti_join(patient_data, map_data, by = "AGS") 
 test %>% select(AGS) %>% distinct()
 test %>% pull(patients_all) %>% is.na() %>% mean()
-# Result: 72 districts with missing patient counts (100% NA)
-# Interpretation: Historical districts from earlier years before reorganization
+
+## Mortality Data Validation
+
+mortality_data %>% select(AGS) %>% n_distinct()
+
+test <- anti_join(mortality_data, map_data, by = "AGS")
+test %>% select(AGS) %>% distinct()
+test %>% pull(deaths_all) %>% is.na() %>% mean()
 ```
 
 ```{r}
-## Reverse Validation: Check for Missing Current Districts
+## Reverse Validation
 
-## BEV Data Completeness
-# Verify all current districts have BEV data
 anti_join(map_data, bev_data, by = "AGS")
-# Result: 0 missing districts ✓
-# All current districts are covered in BEV data
 
-## Health Data Completeness
-# Verify all current districts have health data
-anti_join(map_data, health_data, by = "AGS")
-# Result: 0 missing districts ✓
-# All current districts are covered in health data
+anti_join(map_data, patient_data, by = "AGS")
+
+anti_join(map_data, mortality_data, by = "AGS")
 ```
-
 
 ```{r}
 #| eval: false
 
 ## Spatial-Temporal Visualization
 
-# Create animated choropleth map showing BEV adoption trends
-# Purpose: Identify spatial patterns and diffusion of EV adoption
 animation_bev <- inner_join(bev_data, map_data, by = "AGS") %>% 
     drop_na() %>%
     arrange(year, AGS) %>%
@@ -260,7 +219,7 @@ animation_bev <- inner_join(bev_data, map_data, by = "AGS") %>%
         theme_void() +
         scale_fill_viridis_c(
             option = "plasma", 
-            transform = scales::transform_asinh()  # Asinh transformation handles zeros and skewness better than log
+            transform = scales::transform_asinh()
         ) +
         labs(
             title = 'Year: {frame_time}',
@@ -268,14 +227,11 @@ animation_bev <- inner_join(bev_data, map_data, by = "AGS") %>%
         ) +
         transition_time(year)
 
-# Render and save animation (800x600 px at 100 DPI)
 animate(animation_bev, width = 800, height = 600, res = 100)
 anim_save("outputs/figures/germany_bev_share.gif", width = 800, height = 600, res = 100)
 
-# Create animated map showing hospitalization rates
-# Purpose: Visualize health outcome variation across space and time
 animation_patients <- inner_join(
-    health_data,
+    patient_data,
     map_data,
     by = "AGS"
     ) %>% 
@@ -284,7 +240,7 @@ animation_patients <- inner_join(
         by = c("AGS", "year")
     ) %>%
     mutate(
-        patients_all_per_1000 = (patients_all / pop_total) * 1000  # Standardize by population
+        patients_all_per_1000 = (patients_all / pop_total) * 1000
     ) %>%
     drop_na() %>%
     ggplot() + 
@@ -306,18 +262,16 @@ anim_save("outputs/figures/germany_patients.gif", width = 800, height = 600, res
 
 ::: {#fig-data layout-ncol=2}
 
-![BEV share evolution across German districts. Darker colors indicate higher EV adoption rates.](figures/germany_bev_share.gif)
+![BEV share evolution across German districts](figures/germany_bev_share.gif)
 
-![All-cause hospitalization rates per 1,000 population. Spatial and temporal variation provides context for regression analysis.](figures/germany_patients.gif)
+![All-cause hospitalization rates per 1,000 population](figures/germany_patients.gif)
 
 :::
 
 ```{r}
-#| fig-cap: "Total All-Cause Hospitalizations in Germany by Year. The sharp drop in 2020 reflects COVID-19 pandemic effects on healthcare utilization."
+#| fig-cap: "Total All-Cause Hospitalizations in Germany by Year"
 
-# Aggregate time series: National hospitalization trends
-# Purpose: Identify secular trends and potential structural breaks (e.g., COVID-19)
-health_data %>%
+patient_data %>%
     group_by(year) %>%
     summarise(
         total_patients = sum(patients_all, na.rm = TRUE)
@@ -334,43 +288,19 @@ health_data %>%
 
 ## Merge and Lag Structure
 
-Combine datasets and create appropriate lag structure for analysis.
-
 ```{r}
-# Function to create lags and leads for panel data analysis
-# Handles pre-lagged variables (e.g., PV_l1) by reconstructing base variable first
-# 
-# Parameters:
-#   data: Panel dataset with group_var and order_var
-#   vars: Variable names to lag/lead (can include pre-lagged variables like "PV_l1")
-#   n_lags: Number of lags to create (default: 5)
-#   n_leads: Number of leads to create (default: 5)
-#   group_var: Panel identifier (default: "AGS")
-#   order_var: Time variable (default: "year")
-#
-# Returns:
-#   Dataset with original variables plus:
-#     - {var}_lX: X-period lag
-#     - {var}_fX: X-period lead
-#     - For pre-lagged inputs like "PV_l1", also creates base variable "PV"
 create_lags_leads <- function(data, vars, n_lags = 5, n_leads = 5, group_var = "AGS", order_var = "year") {
     result <- data %>%
-        arrange(!!sym(group_var), !!sym(order_var))  # Ensure proper temporal ordering
+        arrange(!!sym(group_var), !!sym(order_var))
     
     for (var in vars) {
-        # Detect and handle pre-lagged variables (e.g., PV_l1)
         existing_lag <- 0
         base_var <- var
         
         if (grepl("_l[0-9]+$", var)) {
-            # Extract existing lag number
             existing_lag <- as.integer(gsub(".*_l([0-9]+)$", "\\1", var))
-            # Remove lag suffix to get base variable name
             base_var <- gsub("_l[0-9]+$", "", var)
             
-            # Reconstruct base variable by taking appropriate lead
-            # Example: PV_l1 at time t represents PV at t-1
-            #          Therefore, lead(PV_l1, 1) gives PV at t
             result <- result %>%
                 group_by(!!sym(group_var)) %>%
                 mutate(!!base_var := lead(!!sym(var), n = existing_lag)) %>%
@@ -379,7 +309,6 @@ create_lags_leads <- function(data, vars, n_lags = 5, n_leads = 5, group_var = "
         
         var_to_use <- base_var
         
-        # Create lag structure: var_l1, var_l2, ..., var_lN
         for (i in 1:n_lags) {
             lag_name <- paste0(var_to_use, "_l", i)
             result <- result %>%
@@ -388,8 +317,6 @@ create_lags_leads <- function(data, vars, n_lags = 5, n_leads = 5, group_var = "
                 ungroup()
         }
         
-        # Create lead structure: var_f1, var_f2, ..., var_fN
-        # Useful for placebo tests and checking parallel trends
         for (i in 1:n_leads) {
             lead_name <- paste0(var_to_use, "_f", i)
             result <- result %>%
@@ -402,22 +329,19 @@ create_lags_leads <- function(data, vars, n_lags = 5, n_leads = 5, group_var = "
     return(result)
 }
 
-# Merge all datasets and create analysis variables
 merged <- bev_data %>%
-    full_join(health_data, by = c("AGS", "year")) %>%
+    full_join(patient_data, by = c("AGS", "year")) %>%
+    full_join(mortality_data, by = c("AGS", "year")) %>%
     left_join(map_data %>% st_drop_geometry(), by = c("AGS")) %>%
     mutate(
-        # Create population-standardized health outcomes (per 1,000 residents)
-        across(starts_with("patients"), ~ (.x / pop_total) * 1000, .names = "{.col}_per_1000"), 
-        # Create state × year fixed effect identifier
+        across(starts_with("patients"), ~ (.x / pop_total) * 1000, .names = "{.col}_per_1000"),
+        across(starts_with("deaths"), ~ (.x / pop_total) * 1000, .names = "{.col}_per_1000"),
         stateyear = as_factor(paste0(state, "_", year))
     )
 
-# Apply lag structure to key variables
-# Creates variables like: patients_all_per_1000_l1, BEV_share_l2, PV (from PV_l1), etc.
 merged <- create_lags_leads(
     merged, 
-    vars = c("patients_all_per_1000", "patients_resp_per_1000", "BEV_share", "PV_l1", "gr", "GDP_per_capita"),
+    vars = c("patients_all_per_1000", "patients_resp_per_1000", "deaths_all_per_1000", "deaths_infants_per_1000", "BEV_share", "PV_l1", "gr", "GDP_per_capita"),
     n_lags = 5,
     n_leads = 5,
     group_var = "AGS",
@@ -429,40 +353,18 @@ merged <- create_lags_leads(
 
 ## TWFE and 2SLS Estimates
 
-We estimate two sets of models:
-
-1. **Two-Way Fixed Effects (TWFE)**: Standard OLS with district and state×year fixed effects
-   - Identifies within-district variation in BEV adoption and health
-   - May suffer from endogeneity bias if unobserved factors affect both EVs and health
-
-2. **Two-Stage Least Squares (2SLS)**: Instrumental variables approach
-   - Uses charging infrastructure (instrumented by solar radiation) to predict BEV adoption
-   - Provides causal estimates under instrument validity assumptions
+Two-way fixed effects regression and two-stage least squares with instrumental variables.
 
 ```{r}
 ## All-Cause Hospitalizations
 
-# TWFE: Standard panel regression with two-way fixed effects
-# Specification: Y_it = β·BEV_{i,t-1} + α_i + γ_{st} + ε_it
-# where α_i = district FE, γ_{st} = state×year FE
 twfe_all <- felm(
-    patients_all_per_1000 ~ BEV_share_l1 | AGS + stateyear | 0 | state + year,
+    patients_all_per_1000 ~ BEV_share_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
-# 2SLS: Instrumental variables regression
-# First stage: BEV_{i,t-1} = π·PV_{i,t-1} + α_i + γ_{st} + u_it
-# Second stage: Y_it = β·BEV_hat_{i,t-1} + α_i + γ_{st} + ε_it
-# Instrument: Charging infrastructure (PV) affects BEV adoption but not health directly
 tsls_all <- felm(
-    patients_all_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1) | state + year,
-    data = merged
-)
-
-# First stage: Check instrument strength
-# F-statistic should be > 10 (Stock & Yogo rule of thumb)
-first_stage_all <- felm(
-    BEV_share_l1 ~ PV_l1 | AGS + stateyear | 0 | state + year,
+    patients_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | state + year,
     data = merged
 )
 ```
@@ -470,46 +372,35 @@ first_stage_all <- felm(
 ```{r}
 ## Respiratory Disease Hospitalizations
 
-# Same specifications as above, but for respiratory outcomes (ICD-10: J00-J99)
-# Rationale: If EVs reduce air pollution, respiratory diseases should show larger effects
-
-# TWFE for respiratory diseases
 twfe_resp <- felm(
-    patients_resp_per_1000 ~ BEV_share_l1 | AGS + stateyear | 0 | state + year,
+    patients_resp_per_1000 ~ BEV_share_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
-# 2SLS for respiratory diseases
 tsls_resp <- felm(
-    patients_resp_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1) | state + year,
-    data = merged
-)
-
-# First stage (same as above, shown for completeness)
-first_stage_resp <- felm(
-    BEV_share_l1 ~ PV_l1 | AGS + stateyear | 0 | state + year,
+    patients_resp_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | state + year,
     data = merged
 )
 ```
 
 ```{r}
-#| tbl-cap: "Main Regression Results: Effect of BEV Adoption on Hospitalizations. Columns 1-3 show results for all-cause hospitalizations; columns 4-6 show respiratory disease hospitalizations. TWFE estimates may be biased by endogeneity; 2SLS provides causal estimates under instrument validity. All specifications include district fixed effects (AGS) and state×year fixed effects. Standard errors clustered by state and year."
 #| output: asis
 
-# Display regression results in professional table format
 htmlreg(
     list(
         "TWFE" = twfe_all,
-        "1st Stage" = first_stage_all,
+        "1st Stage" = tsls_all$stage1,
         "2SLS" = tsls_all,
         "TWFE" = twfe_resp,
-        "1st Stage" = first_stage_resp,
+        "1st Stage" = tsls_resp$stage1,
         "2SLS" = tsls_resp
     ),
     custom.header = list(
         "All Causes" = 1:3,
         "Respiratory Diseases" = 4:6
     ),
+    caption = "Regression Results. Fixed Effects: District (AGS), State×Year, Year. Clustering: State and Year.",
+    caption.above = TRUE,
     include.rsquared = FALSE,
     include.adjrs = FALSE,
     include.fstatistic = TRUE,
@@ -519,35 +410,26 @@ htmlreg(
 
 ### Lag Structure Analysis
 
-Test robustness of results to different lag specifications. This helps identify the appropriate timing of effects and rules out spurious correlations.
-
-#### First Stage: Instrument Strength Across Lags
-
 ```{r}
 #| output: asis
-#| tbl-cap: "First Stage Regression: Testing Instrument Strength Across Different Lag Specifications. All specifications include district fixed effects (AGS) and state×year fixed effects. Standard errors clustered by state and year. F-statistics test for weak instruments (should exceed 10)."
 
-# Test how instrument strength varies with lag of charging infrastructure
-# Question: Does PV at t, t-1, t-2, or t-3 best predict BEV adoption at t-1?
-
-# All causes
 fs_all_pv <- felm(
-    BEV_share_l1 ~ PV | AGS + stateyear | 0 | state + year,
+    BEV_share_l1 ~ PV | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 fs_all_pv_l1 <- felm(
-    BEV_share_l1 ~ PV_l1 | AGS + stateyear | 0 | state + year,
+    BEV_share_l1 ~ PV_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 fs_all_pv_l2 <- felm(
-    BEV_share_l1 ~ PV_l2 | AGS + stateyear | 0 | state + year,
+    BEV_share_l1 ~ PV_l2 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 fs_all_pv_l3 <- felm(
-    BEV_share_l1 ~ PV_l3 | AGS + stateyear | 0 | state + year,
+    BEV_share_l1 ~ PV_l3 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
@@ -561,6 +443,8 @@ htmlreg(
     custom.header = list(
         "BEV_l1" = 1:4
     ),
+    caption = "First Stage Regression: Instrument Strength Across Lag Specifications. Fixed Effects: District (AGS), State×Year, Year. Clustering: State and Year.",
+    caption.above = TRUE,
     include.rsquared = FALSE,
     include.adjrs = FALSE,
     include.fstatistic = TRUE,
@@ -572,51 +456,44 @@ htmlreg(
 
 ```{r}
 #| output: asis
-#| tbl-cap: "TWFE Estimates: Testing Effect Timing Across Different BEV Lag Specifications. All specifications include district fixed effects (AGS) and state×year fixed effects. Standard errors clustered by state and year. Comparing coefficients across lags helps identify the appropriate temporal structure of health effects."
 
-# Test how effects vary with lag of BEV adoption
-# Question: Do current, 1-year lagged, 2-year lagged, or 3-year lagged BEV shares predict current health?
-# Expectation: Effects should appear with 1-2 year lag if air quality improvements drive health gains
-
-# All causes - varying BEV lags
 twfe_all_ <- felm(
-    patients_all_per_1000 ~ BEV_share | AGS + stateyear | 0 | state + year,
+    patients_all_per_1000 ~ BEV_share | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 twfe_all_l1 <- felm(
-    patients_all_per_1000 ~ BEV_share_l1 | AGS + stateyear | 0 | state + year,
+    patients_all_per_1000 ~ BEV_share_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 twfe_all_l2 <- felm(
-    patients_all_per_1000 ~ BEV_share_l2 | AGS + stateyear | 0 | state + year,
+    patients_all_per_1000 ~ BEV_share_l2 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 twfe_all_l3 <- felm(
-    patients_all_per_1000 ~ BEV_share_l3 | AGS + stateyear | 0 | state + year,
+    patients_all_per_1000 ~ BEV_share_l3 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
-# Respiratory - varying BEV lags
 twfe_resp_ <- felm(
-    patients_resp_per_1000 ~ BEV_share | AGS + stateyear | 0 | state + year,
+    patients_resp_per_1000 ~ BEV_share | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 twfe_resp_l1 <- felm(
-    patients_resp_per_1000 ~ BEV_share_l1 | AGS + stateyear | 0 | state + year,
+    patients_resp_per_1000 ~ BEV_share_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 twfe_resp_l2 <- felm(
-    patients_resp_per_1000 ~ BEV_share_l2 | AGS + stateyear | 0 | state + year,
+    patients_resp_per_1000 ~ BEV_share_l2 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 twfe_resp_l3 <- felm(
-    patients_resp_per_1000 ~ BEV_share_l3 | AGS + stateyear | 0 | state + year,
+    patients_resp_per_1000 ~ BEV_share_l3 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
@@ -635,6 +512,8 @@ htmlreg(
         "All Causes" = 1:4,
         "Respiratory Diseases" = 5:8
     ),
+    caption = "TWFE Estimates: BEV Effect Timing Across Lag Specifications. Fixed Effects: District (AGS), State×Year, Year. Clustering: State and Year.",
+    caption.above = TRUE,
     include.rsquared = FALSE,
     include.adjrs = FALSE,
     include.fstatistic = TRUE,
@@ -644,73 +523,53 @@ htmlreg(
 
 ### Pre-COVID Analysis
 
-The COVID-19 pandemic (2020-2023) dramatically affected healthcare utilization and reporting. We re-estimate our models on pre-pandemic data to ensure results are not driven by COVID-related confounders.
-
 ```{r}
-# Restrict sample to 2016-2019 (pre-pandemic period)
 merged_precovid <- merged %>%
     filter(year < 2020)
 ```
 
-### Pre-COVID: All Causes
-
 ```{r}
-# Re-estimate main specifications on pre-pandemic sample
 twfe_all_pre <- felm(
-    patients_all_per_1000 ~ BEV_share_l1 | AGS + stateyear | 0 | state + year,
-    data = merged_precovid
-)
-
-first_stage_all_pre <- felm(
-    BEV_share_l1 ~ PV_l1 | AGS + stateyear | 0 | state + year,
+    patients_all_per_1000 ~ BEV_share_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged_precovid
 )
 
 tsls_all_pre <- felm(
-    patients_all_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1) | state + year,
+    patients_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | state + year,
     data = merged_precovid
 )
 ```
 
-### Pre-COVID: Respiratory Diseases
-
 ```{r}
-# Re-estimate respiratory models on pre-pandemic sample
 twfe_resp_pre <- felm(
-    patients_resp_per_1000 ~ BEV_share_l1 | AGS + stateyear | 0 | state + year,
-    data = merged_precovid
-)
-
-first_stage_resp_pre <- felm(
-    BEV_share_l1 ~ PV_l1 | AGS + stateyear | 0 | state + year,
+    patients_resp_per_1000 ~ BEV_share_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged_precovid
 )
 
 tsls_resp_pre <- felm(
-    patients_resp_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1) | state + year,
+    patients_resp_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | state + year,
     data = merged_precovid
 )
 ```
 
-### Pre-COVID Results Comparison
-
 ```{r}
 #| output: asis
-#| tbl-cap: "Pre-COVID Analysis: Regression Results for 2016-2019. Excluding the pandemic period provides estimates free from COVID-19 confounding. All specifications include district fixed effects (AGS) and state×year fixed effects. Standard errors clustered by state and year. Compare with full-sample results to assess robustness."
 
 htmlreg(
     list(
         "TWFE" = twfe_all_pre,
-        "1st Stage" = first_stage_all_pre,
+        "1st Stage" = tsls_all_pre$stage1,
         "2SLS" = tsls_all_pre,
         "TWFE" = twfe_resp_pre,
-        "1st Stage" = first_stage_resp_pre,
+        "1st Stage" = tsls_resp_pre$stage1,
         "2SLS" = tsls_resp_pre
     ),
     custom.header = list(
         "All Causes (Pre-COVID)" = 1:3,
         "Respiratory (Pre-COVID)" = 4:6
     ),
+    caption = "Pre-COVID Analysis: Regression Results for 2016-2019. Fixed Effects: District (AGS), State×Year, Year. Clustering: State and Year.",
+    caption.above = TRUE,
     include.rsquared = FALSE,
     include.adjrs = FALSE,
     include.fstatistic = TRUE,
@@ -720,33 +579,18 @@ htmlreg(
 
 ### Heterogeneity Analysis: Sample Splits
 
-Examine whether effects differ across geographic and urban/rural contexts. This reveals policy-relevant heterogeneity and tests whether results are driven by specific subgroups.
-
 ```{r}
-# Utility functions for visualization with extreme value handling
+#| output: false
 
-# Signed log10 transformation: Compresses large positive and negative values
-# Formula: sign(x) × log10(|x| + 1)
-# Useful for visualizing coefficients that span multiple orders of magnitude
 signed_log10 <- function(x) {
     sign(x) * log10(abs(x) + 1)
 }
 
-# Inverse of signed log10 for axis labels
 signed_log10_inv <- function(x) {
     sign(x) * (10^abs(x) - 1)
 }
 
-# Function to estimate 2SLS on subsamples defined by a grouping variable
-# 
-# Parameters:
-#   data: Full dataset
-#   group_var: Variable defining subgroups (e.g., "state", "CITY")
-#   outcome_var: Dependent variable
-#
-# Returns: Tibble with coefficient, standard error, and confidence interval for each subgroup
 run_subsample_tsls <- function(data, group_var, outcome_var = "patients_all_per_1000") {
-    # Get unique levels of grouping variable
     levels <- data %>% 
         pull(!!sym(group_var)) %>% 
         unique() %>% 
@@ -754,21 +598,16 @@ run_subsample_tsls <- function(data, group_var, outcome_var = "patients_all_per_
     
     results <- list()
     
-    # Loop through each subgroup
     for (level in levels) {
-        # Filter data
         subsample <- data %>% filter(!!sym(group_var) == level)
         
-        # Estimate 2SLS model with district FE, state×year FE
-        # Cluster standard errors by district and year
         model <- tryCatch({
             felm(
-                formula = as.formula(paste0(outcome_var, " ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1) | AGS + year")),
+                formula = as.formula(paste0(outcome_var, " ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | AGS + year")),
                 data = subsample
             )
         }, error = function(e) NULL)
         
-        # Extract coefficient and compute 95% confidence interval
         if (!is.null(model)) {
             coef_val <- coef(model)["`BEV_share_l1(fit)`"]
             se_val <- sqrt(diag(vcov(model)))["`BEV_share_l1(fit)`"]
@@ -789,18 +628,14 @@ run_subsample_tsls <- function(data, group_var, outcome_var = "patients_all_per_
     bind_rows(results)
 }
 
-# Run subsample analysis for three dimensions of heterogeneity
-# All-cause hospitalizations
 subsample_results_all_state <- run_subsample_tsls(merged, "state", "patients_all_per_1000")
 subsample_results_all_city <- run_subsample_tsls(merged, "CITY", "patients_all_per_1000")
 subsample_results_all_neu <- run_subsample_tsls(merged, "NEU", "patients_all_per_1000")
 
-# Respiratory hospitalizations
 subsample_results_resp_state <- run_subsample_tsls(merged, "state", "patients_resp_per_1000")
 subsample_results_resp_city <- run_subsample_tsls(merged, "CITY", "patients_resp_per_1000")
 subsample_results_resp_neu <- run_subsample_tsls(merged, "NEU", "patients_resp_per_1000")
 
-# Combine all results for visualization
 subsample_results_all <- bind_rows(
     subsample_results_all_state,
     subsample_results_all_city,
@@ -823,17 +658,12 @@ subsample_results <- bind_rows(subsample_results_all, subsample_results_resp)
 ```{r}
 #| fig-width: 10
 #| fig-height: 6
-#| fig-cap: "Heterogeneous Effects by State: 2SLS estimates of BEV adoption on hospitalizations vary substantially across German states. Coefficients on signed log scale to accommodate wide range. Points show point estimates; error bars show 95% confidence intervals. All estimates include district fixed effects (AGS) and state×year fixed effects; standard errors clustered by district and year."
 
-# Visualize state-level heterogeneity in treatment effects
-# Y-axis: Signed log scale to handle extreme coefficients
-# Separate points for all-cause and respiratory outcomes
 subsample_results %>%
     filter(group == "state") %>%
     mutate(
         level = fct_reorder(level, coefficient),
         outcome = factor(outcome, levels = c("All Causes", "Respiratory")),
-        # Apply signed log transformation
         coef_trans = signed_log10(coefficient),
         ci_lower_trans = signed_log10(ci_lower),
         ci_upper_trans = signed_log10(ci_upper)
@@ -852,8 +682,8 @@ subsample_results %>%
         labels = function(x) round(signed_log10_inv(x), 0)
     ) +
     labs(
-        x = "State (Bundesland)",
-        y = "Coefficient (patients per 1,000 per 1% BEV share, signed log scale)",
+        x = "State",
+        y = "Coefficient (signed log scale)",
         color = "Outcome"
     ) +
     theme_minimal() +
@@ -869,11 +699,7 @@ subsample_results %>%
 ```{r}
 #| fig-width: 8
 #| fig-height: 4
-#| fig-cap: "Urban-Rural Heterogeneity: Comparing 2SLS estimates between urban districts (Kreisfreie Städte/Stadtkreise) and rural districts (Landkreise). Urban areas may show different effects due to higher EV adoption rates, denser populations, and different baseline air quality. All estimates include district fixed effects (AGS) and state×year fixed effects; standard errors clustered by district and year."
 
-# Compare effects in urban vs. rural districts
-# City = Kreisfreie Stadt or Stadtkreis (independent city)
-# Rural = Landkreis (county)
 subsample_results %>%
     filter(group == "CITY") %>%
     mutate(
@@ -892,7 +718,7 @@ subsample_results %>%
     coord_flip() +
     labs(
         x = "District Type",
-        y = "Coefficient (patients per 1,000 per 1% BEV share)",
+        y = "Coefficient",
         color = "Outcome"
     ) +
     theme_minimal() +
@@ -908,15 +734,11 @@ subsample_results %>%
 ```{r}
 #| fig-width: 6
 #| fig-height: 4
-#| fig-cap: "East-West Comparison: 2SLS estimates for former East Germany (neue Bundesländer: Brandenburg, Mecklenburg-Vorpommern, Sachsen, Sachsen-Anhalt, Thüringen) vs. former West Germany. Different industrial history, infrastructure, and demographics may generate heterogeneous effects. All estimates include district fixed effects (AGS) and state×year fixed effects; standard errors clustered by district and year."
 
-# Compare effects between East and West Germany
-# NEU = TRUE: New federal states (former GDR, joined in 1990)
-# NEU = FALSE: Old federal states (former FRG)
 subsample_results %>%
     filter(group == "NEU") %>%
     mutate(
-        level = ifelse(level == "TRUE", "East Germany (New States)", "West Germany (Old States)"),
+        level = ifelse(level == "TRUE", "East", "West"),
         level = fct_reorder(level, coefficient),
         outcome = factor(outcome, levels = c("All Causes", "Respiratory"))
     ) %>%
@@ -932,7 +754,7 @@ subsample_results %>%
     coord_flip() +
     labs(
         x = "",
-        y = "Coefficient (patients per 1,000 per 1% BEV share)",
+        y = "Coefficient",
         color = "Outcome"
     ) +
     theme_minimal() +
@@ -945,18 +767,9 @@ subsample_results %>%
 
 ## Multi-Stage IV: Adding 0-th Stage
 
-Implement a three-stage instrumental variables strategy to strengthen identification:
-
-- **0th stage**: Solar radiation (GR_{t-3}) → Charging infrastructure (PV_{t-2})
-- **1st stage**: Predicted charging infrastructure → BEV adoption (BEV_{t-1})
-- **2nd stage**: Predicted BEV adoption → Health outcomes (Y_t)
-
-This approach uses only the component of charging infrastructure driven by exogenous solar radiation variation, providing a cleaner instrument.
-
 ```{r}
 #| output: asis
 
-# Restrict to complete cases for consistent sample across stages
 merged_chain <- merged %>%
     drop_na(
         patients_all_per_1000, patients_resp_per_1000, BEV_share_l1, PV_l1, gr_l2
@@ -964,82 +777,73 @@ merged_chain <- merged %>%
 
 ## 0th Stage: Solar Radiation → Charging Infrastructure
 
-# Linear specification
 zeroth_stage <- felm(
-    PV_l1 ~ gr_l2 | AGS + stateyear | 0 | state + year,
+    PV_l1 ~ gr_l2 | AGS + stateyear + year | 0 | state + year,
     data = merged_chain
 )
 
-# Extract predicted charging infrastructure from 0th stage
 merged_chain <- merged_chain %>%
     mutate(
         PV_l1_pred = zeroth_stage$fitted.values
     )
 
-## 2SLS Chain: Using Predicted Charging Infrastructure
+## 2SLS Chain
 
-# All-cause hospitalizations
 tsls_chain <- felm(
-    patients_all_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1_pred) | state + year,
+    patients_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred) | state + year,
     data = merged_chain
 )
 
-# With quadratic 1st stage (allows nonlinear infrastructure-adoption relationship)
 tsls_chain_1quadratic <- felm(
-    patients_all_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1_pred + I(PV_l1_pred^2)) | state + year,
+    patients_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred + I(PV_l1_pred^2)) | state + year,
     data = merged_chain
 )
 
-# Respiratory hospitalizations
 tsls_chain_resp <- felm(
-    patients_resp_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1_pred) | state + year,
+    patients_resp_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred) | state + year,
     data = merged_chain
 )
 
 tsls_chain_resp_1quadratic <- felm(
-    patients_resp_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1_pred + I(PV_l1_pred^2)) | state + year,
+    patients_resp_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred + I(PV_l1_pred^2)) | state + year,
     data = merged_chain
 )
 
-## 0th Stage with Quadratic: Allow Nonlinear Radiation-Infrastructure Relationship
+## 0th Stage with Quadratic
 
-# Quadratic specification (diminishing returns in solar panel installation)
 zeroth_stage_0quadratic <- felm(
-    PV_l1 ~ gr_l2 + I(gr_l2^2) | AGS + stateyear | 0 | state + year,
+    PV_l1 ~ gr_l2 + I(gr_l2^2) | AGS + stateyear + year | 0 | state + year,
     data = merged_chain
 )
 
-# Extract predicted values from quadratic 0th stage
 merged_chain <- merged_chain %>%
     mutate(
         PV_l1_pred_0quadratic = zeroth_stage_0quadratic$fitted.values
     )
 
-# 2SLS with quadratic 0th stage predictions
 tsls_chain_0quadratic <- felm(
-    patients_all_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1_pred_0quadratic) | state + year,
+    patients_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred_0quadratic) | state + year,
     data = merged_chain
 )
 
 tsls_chain_0quadratic_1quadratic <- felm(
-    patients_all_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1_pred_0quadratic + I(PV_l1_pred_0quadratic^2)) | state + year,
+    patients_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred_0quadratic + I(PV_l1_pred_0quadratic^2)) | state + year,
     data = merged_chain
 )
 
 tsls_chain_resp_0quadratic <- felm(
-    patients_resp_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1_pred_0quadratic) | state + year,
+    patients_resp_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred_0quadratic) | state + year,
     data = merged_chain
 )
 
 tsls_chain_resp_0quadratic_1quadratic <- felm(
-    patients_resp_per_1000 ~ 1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1_pred_0quadratic + I(PV_l1_pred_0quadratic^2)) | state + year,
+    patients_resp_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred_0quadratic + I(PV_l1_pred_0quadratic^2)) | state + year,
     data = merged_chain
 )
 ```
 
 ```{r}
 #| output: asis
-#| tbl-cap: "Multi-Stage IV Results: Testing Nonlinear Specifications. Columns (1)-(2) show 0th stage with linear and quadratic specifications. Columns (1.1.1)-(2.1.2) show all-cause results with different combinations. Columns (1.2.1)-(2.2.2) show respiratory results. Quadratic terms capture potential nonlinearities in radiation→infrastructure and infrastructure→adoption relationships. All specifications include district fixed effects (AGS) and state×year fixed effects. Standard errors clustered by state and year."
 
 htmlreg(
     list(
@@ -1059,6 +863,8 @@ htmlreg(
         "All Causes 2SLS" = 3:6,
         "Respiratory 2SLS" = 7:10
     ),
+    caption = "Multi-Stage IV Results. Fixed Effects: District (AGS), State×Year, Year. Clustering: State and Year.",
+    caption.above = TRUE,
     custom.gof.rows = list(
         "Quadratic 0-th Stage" = c("", "✓", "", "", "✓", "✓", "", "", "✓", "✓"),
         "Quadratic 1st Stage" = c("", "", "", "✓", "", "✓", "", "✓", "", "✓")
@@ -1072,42 +878,31 @@ htmlreg(
 
 ## Robustness: Additional Control Variables
 
-Test sensitivity of results to including additional covariates that may affect both EV adoption and health outcomes.
-
-**Additional controls**:
-- **Average age**: Controls for demographic composition (older populations have higher hospitalization rates)
-- **GDP per capita (lagged)**: Controls for economic development and healthcare access
-
 ```{r}
-# TWFE with additional controls
 twfe_all_controls <- felm(
-    patients_all_per_1000 ~ BEV_share_l1 + average_age + GDP_per_capita_l1 | AGS + stateyear | 0 | state + year,
+    patients_all_per_1000 ~ BEV_share_l1 + average_age + GDP_per_capita_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
 twfe_resp_controls <- felm(
-    patients_resp_per_1000 ~ BEV_share_l1 + average_age + GDP_per_capita_l1 | AGS + stateyear | 0 | state + year,
+    patients_resp_per_1000 ~ BEV_share_l1 + average_age + GDP_per_capita_l1 | AGS + stateyear + year | 0 | state + year,
     data = merged
 )
 
-# 2SLS with additional controls
-# Controls enter the second stage only (not as instruments)
 tsls_all_controls <- felm(
-    patients_all_per_1000 ~ average_age + GDP_per_capita_l1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1) | state + year,
+    patients_all_per_1000 ~ average_age + GDP_per_capita_l1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | state + year,
     data = merged
 )
 
 tsls_resp_controls <- felm(
-    patients_resp_per_1000 ~ average_age + GDP_per_capita_l1 | AGS + stateyear | (BEV_share_l1 ~ PV_l1) | state + year,
+    patients_resp_per_1000 ~ average_age + GDP_per_capita_l1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | state + year,
     data = merged
 )
 ```
 
-
 ```{r}
 #| warning: false
 #| output: asis
-#| tbl-cap: "Robustness Check: Results with Additional Controls. Including average age and GDP per capita (lagged) tests whether main results are driven by demographic or economic confounders. Coefficients on BEV_share_l1 can be compared with baseline specifications to assess sensitivity. All specifications include district fixed effects (AGS) and state×year fixed effects. Standard errors clustered by state and year."
 
 htmlreg(
     list(
@@ -1120,6 +915,8 @@ htmlreg(
         "All Causes" = 1:2,
         "Respiratory Diseases" = 3:4
     ),
+    caption = "Robustness: Additional Controls. Fixed Effects: District (AGS), State×Year, Year. Clustering: State and Year.",
+    caption.above = TRUE,
     custom.coef.map = list(
         "BEV_share_l1" = "BEV Share (t-1)",
         "`BEV_share_l1(fit)`" = "BEV Share (t-1, instrumented)",
@@ -1133,5 +930,169 @@ htmlreg(
     include.adjrs = FALSE,
     include.fstatistic = TRUE,
     digits = 5
+)
+```
+
+## Mortality Analysis
+
+```{r}
+## All-Cause Mortality
+
+twfe_deaths_all <- felm(
+    deaths_all_per_1000 ~ BEV_share_l1 | AGS + stateyear + year | 0 | state + year,
+    data = merged
+)
+
+tsls_deaths_all <- felm(
+    deaths_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | state + year,
+    data = merged
+)
+
+## Infant Mortality
+
+twfe_deaths_infants <- felm(
+    deaths_infants_per_1000 ~ BEV_share_l1 | AGS + stateyear + year | 0 | state + year,
+    data = merged
+)
+
+tsls_deaths_infants <- felm(
+    deaths_infants_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1) | state + year,
+    data = merged
+)
+```
+
+```{r}
+#| output: asis
+
+htmlreg(
+    list(
+        "TWFE" = twfe_deaths_all,
+        "1st Stage" = tsls_deaths_all$stage1,
+        "2SLS" = tsls_deaths_all,
+        "TWFE" = twfe_deaths_infants,
+        "1st Stage" = tsls_deaths_infants$stage1,
+        "2SLS" = tsls_deaths_infants
+    ),
+    custom.header = list(
+        "All-Cause Mortality" = 1:3,
+        "Infant Mortality" = 4:6
+    ),
+    caption = "Mortality Analysis: TWFE and 2SLS Results. Fixed Effects: District (AGS), State×Year, Year. Clustering: State and Year.",
+    caption.above = TRUE,
+    include.rsquared = FALSE,
+    include.adjrs = FALSE,
+    include.fstatistic = TRUE,
+    digits = 5
+)
+```
+
+### Chained 2SLS: Mortality
+
+```{r}
+merged_chain_mortality <- merged %>%
+    drop_na(
+        deaths_all_per_1000, deaths_infants_per_1000, BEV_share_l1, PV_l1, gr_l2
+    )
+
+## 0th Stage
+
+zeroth_stage_mortality <- felm(
+    PV_l1 ~ gr_l2 | AGS + stateyear + year | 0 | state + year,
+    data = merged_chain_mortality
+)
+
+merged_chain_mortality <- merged_chain_mortality %>%
+    mutate(
+        PV_l1_pred = zeroth_stage_mortality$fitted.values
+    )
+
+## 2SLS Chain - All-Cause Mortality
+
+tsls_chain_deaths_all <- felm(
+    deaths_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred) | state + year,
+    data = merged_chain_mortality
+)
+
+tsls_chain_deaths_all_1quadratic <- felm(
+    deaths_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred + I(PV_l1_pred^2)) | state + year,
+    data = merged_chain_mortality
+)
+
+## 2SLS Chain - Infant Mortality
+
+tsls_chain_deaths_infants <- felm(
+    deaths_infants_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred) | state + year,
+    data = merged_chain_mortality
+)
+
+tsls_chain_deaths_infants_1quadratic <- felm(
+    deaths_infants_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred + I(PV_l1_pred^2)) | state + year,
+    data = merged_chain_mortality
+)
+
+## 0th Stage with Quadratic
+
+zeroth_stage_mortality_0quadratic <- felm(
+    PV_l1 ~ gr_l2 + I(gr_l2^2) | AGS + stateyear + year | 0 | state + year,
+    data = merged_chain_mortality
+)
+
+merged_chain_mortality <- merged_chain_mortality %>%
+    mutate(
+        PV_l1_pred_0quadratic = zeroth_stage_mortality_0quadratic$fitted.values
+    )
+
+tsls_chain_deaths_all_0quadratic <- felm(
+    deaths_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred_0quadratic) | state + year,
+    data = merged_chain_mortality
+)
+
+tsls_chain_deaths_all_0quadratic_1quadratic <- felm(
+    deaths_all_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred_0quadratic + I(PV_l1_pred_0quadratic^2)) | state + year,
+    data = merged_chain_mortality
+)
+
+tsls_chain_deaths_infants_0quadratic <- felm(
+    deaths_infants_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred_0quadratic) | state + year,
+    data = merged_chain_mortality
+)
+
+tsls_chain_deaths_infants_0quadratic_1quadratic <- felm(
+    deaths_infants_per_1000 ~ 1 | AGS + stateyear + year | (BEV_share_l1 ~ PV_l1_pred_0quadratic + I(PV_l1_pred_0quadratic^2)) | state + year,
+    data = merged_chain_mortality
+)
+```
+
+```{r}
+#| output: asis
+
+htmlreg(
+    list(
+        "(1)" = zeroth_stage_mortality,
+        "(2)" = zeroth_stage_mortality_0quadratic,
+        "(1.1.1)" = tsls_chain_deaths_all,
+        "(1.1.2)" = tsls_chain_deaths_all_1quadratic,
+        "(2.1.1)" = tsls_chain_deaths_all_0quadratic,
+        "(2.1.2)" = tsls_chain_deaths_all_0quadratic_1quadratic,
+        "(1.2.1)" = tsls_chain_deaths_infants,
+        "(1.2.2)" = tsls_chain_deaths_infants_1quadratic,
+        "(2.2.1)" = tsls_chain_deaths_infants_0quadratic,
+        "(2.2.2)" = tsls_chain_deaths_infants_0quadratic_1quadratic
+    ),
+    custom.header = list(
+        "0-th Stage" = 1:2,
+        "All-Cause Mortality 2SLS" = 3:6,
+        "Infant Mortality 2SLS" = 7:10
+    ),
+    caption = "Chained 2SLS: Mortality Analysis. Fixed Effects: District (AGS), State×Year, Year. Clustering: State and Year.",
+    caption.above = TRUE,
+    custom.gof.rows = list(
+        "Quadratic 0-th Stage" = c("", "✓", "", "", "✓", "✓", "", "", "✓", "✓"),
+        "Quadratic 1st Stage" = c("", "", "", "✓", "", "✓", "", "✓", "", "✓")
+    ),
+    digits = 5,
+    include.rsquared = FALSE,
+    include.adjrs = FALSE,
+    include.fstatistic = TRUE
 )
 ```

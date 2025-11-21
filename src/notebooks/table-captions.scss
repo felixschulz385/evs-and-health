@@ -1,0 +1,19 @@
+/*-- scss:rules --*/
+table.texreg {
+  caption {
+    caption-side: top;
+    text-align: left;
+    padding-bottom: 0.75em;
+    font-weight: normal;
+    font-size: 0.95em;
+    margin-bottom: 0.5em;
+  }
+}
+
+// Ensure caption is displayed as block element for better spacing
+.texreg-caption {
+  display: block;
+  margin-bottom: 0.75em;
+  font-size: 0.95em;
+  text-align: left;
+}
